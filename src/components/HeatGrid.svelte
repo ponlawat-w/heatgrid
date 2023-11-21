@@ -1,9 +1,12 @@
 <script lang="ts">
   import HeatGridTable from './HeatGridTable.svelte';
-import type { MonthIndices, Result, Table, Week } from './types';
+  import type { MonthIndices, Result, Table, Week } from './types';
 
   export let year: number = new Date().getUTCFullYear();
   export let data: { date: string, value: number }[] = [];
+  export let minDate: Date|undefined = undefined;
+  export let min: number|undefined = undefined;
+  export let max: number|undefined = undefined;
 
   let results: Result|undefined = undefined;
   $: results = getResults(year, data);
@@ -20,9 +23,10 @@ import type { MonthIndices, Result, Table, Week } from './types';
       if (date === 1) {
         monthIdx[month] = table.length;
       }
-      const amount = values
-        .filter(x => x.date === `${year}-${month + 1}-${date}`)
-        .reduce((sum, val) => sum + val.value, 0);
+      const amount = current.getTime() > new Date().getTime() || (minDate && minDate.getTime() > current.getTime())
+        ? undefined
+        : values.filter(x => x.date === `${year}-${(month + 1).toString().padStart(2, '0')}-${(date).toString().padStart(2, '0')}`)
+            .reduce((sum, val) => sum + val.value, 0);
       week[dow] = amount;
       if (dow > 5) {
         table.push(week);
@@ -38,5 +42,13 @@ import type { MonthIndices, Result, Table, Week } from './types';
 </script>
 
 {#if results}
-  <HeatGridTable input={results} />
+  <div class="heat-grid">
+    <HeatGridTable year={year} input={results} min={min} max={max} />
+  </div>
 {/if}
+
+<style>
+  .heat-grid {
+    margin: 0 10px 20px 10px;
+  }
+</style>
